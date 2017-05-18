@@ -1,10 +1,8 @@
-Write-Output "`n"
-Write-Output "`n"
-Write-Output "`n"
-
 # set variables from commandline
 param (
     [switch]$isRunningServerAD = $false,
+    [switch]$wantHIPAA = $false,
+    [switch]$wantPCI = $false,
 
     [string]$ADDomain = "@DomainController@",
     [string]$ADUserCred = "@DomainName@\@DomainAdmin@",
@@ -13,14 +11,26 @@ param (
     [string]$LocalUser = "Pat Raynor",
     [string]$LocalPswd = "Something44!",
 
-    [string]$ipRanges = "192.168.87.0-192.168.87.255",
-
     [string]$NDConnectorID = "2b000bb7-1d27-4c7f-9109-591967e95b7a"
 )
+
+Write-Output "`n"
+Write-Output "`n"
+Write-Output "`n"
+
+# generate ip range based on computer ip
+$iptest = ((ipconfig | findstr [0-9].\.)[0]).Split()[-1] -replace ".{3}$"
+$ipRanges = $iptest + "0" + "-" + $iptest + "255"
 
 # output parameters so we know whats going on...
 Write-Output "`n"
 Write-Output "Parameters:`r"
+if($wantPCI) {
+    Write-Output "  Will Perform PCI security scan.`r"
+}
+if($wantHIPAA) {
+    Write-Output "  Will Perform HIPAA security scan.`r"
+}
 if($isRunningServerAD) {
     Write-Output "  Running in Active Directory environment.`r"
     Write-Output "  ADDomain = " $ADDomain " `r"
@@ -40,8 +50,12 @@ Write-Output "`n"
 Write-Output "making temporary folders... `n"
 mkdir -force C:\ndc
 mkdir -force C:\ndc\results
-#mkdir -force C:\ndc\pci_results
+if($wantPCI) {
+mkdir -force C:\ndc\pci_results
+}
+if($wantHIPAA) {
 mkdir -force C:\ndc\hipaa_results
+}
 
 # grab the network detective toolkit and save into temp folder
 Write-Output "downloading network detective toolkit... `n"
@@ -151,16 +165,20 @@ Start-Sleep -s 2
 .\ndconnector.exe -ID $NDConnectorID -d C:\ndc\results -zipname $env:computername-NDC
 
 # run pci detective data collector
-#Write-Output "PCI compliance Detective scan... `n"
-#.\pcidc.exe -file "C:\ndc\run.ndp" -outdir "C:\ndc\pci_results"
-#Start-Sleep -s 2
-#.\ndconnector.exe -ID $NDConnectorID -d C:\ndc\pci_results -zipname $env:computername-PCI
+if($wantPCI) {
+    Write-Output "PCI compliance Detective scan... `n"
+    .\pcidc.exe -file "C:\ndc\run.ndp" -outdir "C:\ndc\pci_results"
+    Start-Sleep -s 2
+    .\ndconnector.exe -ID $NDConnectorID -d C:\ndc\pci_results -zipname $env:computername-PCI
+}
 
 # run hipaa detective data collector
-Write-Output "HIPAA compliance Detective scan... `n"
-.\hipaadc.exe -file "C:\ndc\run.ndp" -outdir "C:\ndc\hipaa_results"
-Start-Sleep -s 2
-.\ndconnector.exe -ID $NDConnectorID -d C:\ndc\hipaa_results -zipname $env:computername-HIPAA
+if($wantHIPAA) {
+    Write-Output "HIPAA compliance Detective scan... `n"
+    .\hipaadc.exe -file "C:\ndc\run.ndp" -outdir "C:\ndc\hipaa_results"
+    Start-Sleep -s 2
+    .\ndconnector.exe -ID $NDConnectorID -d C:\ndc\hipaa_results -zipname $env:computername-HIPAA
+}
 
 # go back to C:
 cd C:\
