@@ -25,13 +25,13 @@ $ipRanges = $iptest + "0" + "-" + $iptest + "255"
 # output parameters so we know whats going on...
 Write-Output "`n"
 Write-Output "Parameters:`r"
-if($wantPCI) {
+if($wantPCI.isPresent) {
     Write-Output "  Will Perform PCI security scan.`r"
 }
-if($wantHIPAA) {
+if($wantHIPAA.isPresent) {
     Write-Output "  Will Perform HIPAA security scan.`r"
 }
-if($isRunningServerAD) {
+if($isRunningServerAD.isPresent) {
     Write-Output "  Running in Active Directory environment.`r"
     Write-Output "  ADDomain = " $ADDomain " `r"
     Write-Output "  ADUserCred = " $ADUserCred " `r"
@@ -50,10 +50,10 @@ Write-Output "`n"
 Write-Output "making temporary folders... `n"
 mkdir -force C:\ndc
 mkdir -force C:\ndc\results
-if($wantPCI) {
+if($wantPCI.isPresent) {
 mkdir -force C:\ndc\pci_results
 }
-if($wantHIPAA) {
+if($wantHIPAA.isPresent) {
 mkdir -force C:\ndc\hipaa_results
 }
 
@@ -73,7 +73,7 @@ Write-Output "extracting network detective toolkit... `n"
 .\NDDCNoRun.exe /auto
 
 # build the command line depending on run mode and save it to file
-if($isRunningServerAD) {
+if($isRunningServerAD.isPresent) {
     "-eventlogs
     -sql
     -internet
@@ -165,7 +165,7 @@ Start-Sleep -s 2
 .\ndconnector.exe -ID $NDConnectorID -d C:\ndc\results -zipname $env:computername-NDC
 
 # run pci detective data collector
-if($wantPCI) {
+if($wantPCI.isPresent) {
     Write-Output "PCI compliance Detective scan... `n"
     .\pcidc.exe -file "C:\ndc\run.ndp" -outdir "C:\ndc\pci_results"
     Start-Sleep -s 2
@@ -173,7 +173,7 @@ if($wantPCI) {
 }
 
 # run hipaa detective data collector
-if($wantHIPAA) {
+if($wantHIPAA.isPresent) {
     Write-Output "HIPAA compliance Detective scan... `n"
     .\hipaadc.exe -file "C:\ndc\run.ndp" -outdir "C:\ndc\hipaa_results"
     Start-Sleep -s 2
@@ -182,11 +182,13 @@ if($wantHIPAA) {
 
 # go back to C:
 cd C:\
-Start-Sleep -s 2
+Start-Sleep -s 5
 
 # remove temporary folders
 Write-Output "removing temporary folders... `n"
 Remove-Item -Path C:\ndc -Recurse
 
 # and we are complete!
+$end_time = Get-Date
 Write-Output "Time taken to finish data collection: $((Get-Date).Subtract($start_time).Seconds) second(s)"
+Write-Output "End Time: $((Get-Date).ToString('hh:mm:ss'))`n`n"
