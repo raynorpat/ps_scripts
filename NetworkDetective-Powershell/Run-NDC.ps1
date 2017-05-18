@@ -1,6 +1,6 @@
 # set variables from commandline
 param (
-    [switch]$isRunningServerAD = $false,
+    [switch]$IsServerAD = $false,
     [switch]$wantHIPAA = $false,
     [switch]$wantPCI = $false,
 
@@ -25,13 +25,13 @@ $ipRanges = $iptest + "0" + "-" + $iptest + "255"
 # output parameters so we know whats going on...
 Write-Output "`n"
 Write-Output "Parameters:`r"
-if($wantPCI.isPresent) {
+if($PSBoundParameters.ContainsKey('wantPCI')) {
     Write-Output "  Will Perform PCI security scan.`r"
 }
-if($wantHIPAA.isPresent) {
+if($PSBoundParameters.ContainsKey('wantHIPAA')) {
     Write-Output "  Will Perform HIPAA security scan.`r"
 }
-if($isRunningServerAD.isPresent) {
+if($PSBoundParameters.ContainsKey('IsServerAD')) {
     Write-Output "  Running in Active Directory environment.`r"
     Write-Output "  ADDomain = " $ADDomain " `r"
     Write-Output "  ADUserCred = " $ADUserCred " `r"
@@ -50,10 +50,10 @@ Write-Output "`n"
 Write-Output "making temporary folders... `n"
 mkdir -force C:\ndc
 mkdir -force C:\ndc\results
-if($wantPCI.isPresent) {
+if($PSBoundParameters.ContainsKey('wantPCI')) {
 mkdir -force C:\ndc\pci_results
 }
-if($wantHIPAA.isPresent) {
+if($PSBoundParameters.ContainsKey('wantHIPAA')) {
 mkdir -force C:\ndc\hipaa_results
 }
 
@@ -73,7 +73,7 @@ Write-Output "extracting network detective toolkit... `n"
 .\NDDCNoRun.exe /auto
 
 # build the command line depending on run mode and save it to file
-if($isRunningServerAD.isPresent) {
+if($PSBoundParameters.ContainsKey('IsServerAD')) {
     "-eventlogs
     -sql
     -internet
@@ -165,7 +165,7 @@ Start-Sleep -s 2
 .\ndconnector.exe -ID $NDConnectorID -d C:\ndc\results -zipname $env:computername-NDC
 
 # run pci detective data collector
-if($wantPCI.isPresent) {
+if($PSBoundParameters.ContainsKey('wantPCI')) {
     Write-Output "PCI compliance Detective scan... `n"
     .\pcidc.exe -file "C:\ndc\run.ndp" -outdir "C:\ndc\pci_results"
     Start-Sleep -s 2
@@ -173,7 +173,7 @@ if($wantPCI.isPresent) {
 }
 
 # run hipaa detective data collector
-if($wantHIPAA.isPresent) {
+if($PSBoundParameters.ContainsKey('wantHIPAA')) {
     Write-Output "HIPAA compliance Detective scan... `n"
     .\hipaadc.exe -file "C:\ndc\run.ndp" -outdir "C:\ndc\hipaa_results"
     Start-Sleep -s 2
