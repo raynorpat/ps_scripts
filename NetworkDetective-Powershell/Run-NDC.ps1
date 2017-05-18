@@ -1,8 +1,8 @@
 # set variables from commandline
 param (
-    [switch]$IsServerAD = $false,
-    [switch]$wantHIPAA = $false,
-    [switch]$wantPCI = $false,
+    [switch]$IsServerAD,
+    [switch]$wantHIPAA,
+    [switch]$wantPCI,
 
     [string]$ADDomain = "@DomainController@",
     [string]$ADUserCred = "@DomainName@\@DomainAdmin@",
