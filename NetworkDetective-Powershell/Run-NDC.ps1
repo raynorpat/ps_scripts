@@ -19,7 +19,7 @@ Write-Output "`n"
 
 # generate ip range based on computer ip
 $iptest = ((ipconfig | findstr [0-9].\.)[0]).Split()[-1] -replace ".{3}$"
-$ipRanges = $iptest + "0" + "-" + $iptest + "255"
+$ipRanges = $iptest + ".0" + "-" + $iptest + ".255"
 
 # output parameters so we know whats going on...
 Write-Output "`n"
@@ -169,9 +169,9 @@ if($PSBoundParameters.ContainsKey('wantPCI')) {
 if($PSBoundParameters.ContainsKey('wantHIPAA')) {
     Write-Output "HIPAA compliance Detective scan... `n"
 	if($PSBoundParameters.ContainsKey('IsServerAD')) {
-		.\hipaacmdline.exe -file "C:\ndc\run.ndp"
+		.\hipaacmdline.exe -file "C:\ndc\run.ndp" -outdir "C:\ndc\results"
 	} else {
-		.\hipaadc.exe -file "C:\ndc\run.ndp"
+		.\hipaadc.exe -file "C:\ndc\run.ndp" -outdir "C:\ndc\results"
 	}
 }
 
