@@ -8,10 +8,10 @@ param (
     [string]$ADUserCred = "@DomainName@\@DomainAdmin@",
     [string]$ADUserPswd = "@DomainAdminPwd@",
 
-    [string]$LocalUser = "Pat Raynor",
-    [string]$LocalPswd = "Something44!",
+    [string]$LocalUser = "Test",
+    [string]$LocalPswd = "Password1",
 
-    [string]$NDConnectorID = "2b000bb7-1d27-4c7f-9109-591967e95b7a"
+    [string]$NDConnectorID = "ConectorIDHere!"
 )
 
 Write-Output "`n"
