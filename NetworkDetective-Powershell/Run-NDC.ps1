@@ -4,7 +4,6 @@ param (
     [switch]$wantHIPAA,
     [switch]$wantPCI,
 
-    [string]$ADDomain = "@DomainController@",
     [string]$ADUserCred = "@DomainName@\@DomainAdmin@",
     [string]$ADUserPswd = "@DomainAdminPwd@",
 
@@ -33,7 +32,6 @@ if($PSBoundParameters.ContainsKey('wantHIPAA')) {
 }
 if($PSBoundParameters.ContainsKey('IsServerAD')) {
     Write-Output "  Running in Active Directory environment.`r"
-    Write-Output "  ADDomain = " $ADDomain " `r"
     Write-Output "  ADUserCred = " $ADUserCred " `r"
     Write-Output "  ADUserPswd = " $ADUserPswd " `r"
 } else {
@@ -81,8 +79,6 @@ if($PSBoundParameters.ContainsKey('IsServerAD')) {
     -dhcp
 
     -ad
-    -addc
-    $ADDomain
     -credsuser
     $ADUserCred
     -credsepwd
