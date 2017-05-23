@@ -1,6 +1,7 @@
 # set variables from commandline
 param (
     [switch]$IsServerAD,
+	[switch]$wantLocal,
     [switch]$wantHIPAA,
     [switch]$wantPCI,
 
@@ -190,9 +191,16 @@ if($PSBoundParameters.ContainsKey('IsServerAD')) {
     -screensaver
     -usb
     -nozip
-
+	-sdfdir
+	C:\ndc\results	
+	-sdfbase
+	$env:computername-SDF
+	
     -scantype
     ndc,ldc,sdc,sdcnet
+	hipaadeep
+	-pcitype
+	net	
     " | out-file -filepath "C:\ndc\run.ndp"
 } else {
     "-net
@@ -231,9 +239,16 @@ if($PSBoundParameters.ContainsKey('IsServerAD')) {
     -screensaver
     -usb
     -nozip
+	-sdfdir
+	C:\ndc\results
+	-sdfbase
+	$env:computername-SDF	
 
     -scantype
     ndc,ldc,sdc,sdcnet
+	hipaadeep
+	-pcitype
+	net	
     " | out-file -filepath "C:\ndc\run.ndp"
 }
 
@@ -246,16 +261,21 @@ $start_time = Get-Date
 Write-Output "Start Time: $((Get-Date).ToString('hh:mm:ss'))`n`n"
 
 # run network detective data collector
-Write-Output "Network Detective scan... `n"
-.\nddc.exe -file "C:\ndc\run.ndp" -outdir "C:\ndc\results"
+if($PSBoundParameters.ContainsKey('wantLocal')) {
+	Write-Output "Network Detective local only scan... `n"
+	.\nddc.exe -file "C:\ndc\run.ndp" -local -silent
+} else {
+	Write-Output "Network Detective scan... `n"
+	.\nddc.exe -file "C:\ndc\run.ndp"
+}
 
 # run pci detective data collector
 if($PSBoundParameters.ContainsKey('wantPCI')) {
     Write-Output "PCI compliance Detective scan... `n"
 	if($PSBoundParameters.ContainsKey('IsServerAD')) {
-		.\pcicmdline.exe -file "C:\ndc\run.ndp" -outdir "C:\ndc\results"
+		.\pcicmdline.exe -file "C:\ndc\run.ndp"
 	} else {
-		.\pcidc.exe -file "C:\ndc\run.ndp" -outdir "C:\ndc\results"
+		.\pcidc.exe -file "C:\ndc\run.ndp"
 	}
 }
 
@@ -263,9 +283,9 @@ if($PSBoundParameters.ContainsKey('wantPCI')) {
 if($PSBoundParameters.ContainsKey('wantHIPAA')) {
     Write-Output "HIPAA compliance Detective scan... `n"
 	if($PSBoundParameters.ContainsKey('IsServerAD')) {
-		.\hipaacmdline.exe -file "C:\ndc\run.ndp" -outdir "C:\ndc\results"
+		.\hipaacmdline.exe -file "C:\ndc\run.ndp"
 	} else {
-		.\hipaadc.exe -file "C:\ndc\run.ndp" -outdir "C:\ndc\results"
+		.\hipaadc.exe -file "C:\ndc\run.ndp"
 	}
 }
 
