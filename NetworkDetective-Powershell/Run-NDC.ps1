@@ -145,7 +145,10 @@ Write-Output "`n"
 # make temporary folders
 Write-Output "making temporary folders... `n"
 mkdir -force C:\ndc
-mkdir -force C:\ndc\results
+mkdir -force C:\ndc\ndresults
+mkdir -force C:\ndc\secresults
+mkdir -force C:\ndc\hipaaresults
+mkdir -force C:\ndc\pciresults
 
 # grab the network detective toolkit and save into temp folder
 Write-Output "downloading network detective toolkit... `n"
@@ -184,8 +187,6 @@ if($PSBoundParameters.ContainsKey('IsServerAD')) {
 	1
     -logfile
     ndfRun.log
-	-outdir
-	C:\ndc\results
 
     -testports
     -testurls
@@ -195,7 +196,7 @@ if($PSBoundParameters.ContainsKey('IsServerAD')) {
     -usb
     -nozip
 	-sdfdir
-	C:\ndc\results	
+	C:\ndc\secresults	
 	-sdfbase
 	$env:computername-SDF
 	
@@ -231,8 +232,6 @@ if($PSBoundParameters.ContainsKey('IsServerAD')) {
 	1
     -logfile
     ndfRun.log
-	-outdir
-	C:\ndc\results
 
     -testports
     -testurls
@@ -242,7 +241,7 @@ if($PSBoundParameters.ContainsKey('IsServerAD')) {
     -usb
     -nozip
 	-sdfdir
-	C:\ndc\results
+	C:\ndc\secresults
 	-sdfbase
 	$env:computername-SDF	
 
@@ -264,35 +263,44 @@ Write-Output "Start Time: $((Get-Date).ToString('hh:mm:ss'))`n`n"
 # run network detective data collector
 if($PSBoundParameters.ContainsKey('wantLocal')) {
 	Write-Output "Network Detective local only scan... `n"
-	.\nddc.exe -file "C:\ndc\run.ndp" -local -silent -outdir "C:\ndc\results"
+	.\nddc.exe -file "C:\ndc\run.ndp" -local -silent -outdir "C:\ndc\ndresults"
 } else {
 	Write-Output "Network Detective scan... `n"
-	.\nddc.exe -file "C:\ndc\run.ndp" -outdir "C:\ndc\results"
+	.\nddc.exe -file "C:\ndc\run.ndp" -outdir "C:\ndc\ndresults"
 }
+
+# send results to network detective collector
+Start-Sleep -s 2
+.\ndconnector.exe -ID $NDConnectorID -d "C:\ndc\ndresults" -zipname $env:computername-ND
+.\ndconnector.exe -ID $NDConnectorID -d "C:\ndc\secresults" -zipname $env:computername-SDF
 
 # run pci detective data collector
 if($PSBoundParameters.ContainsKey('wantPCI')) {
     Write-Output "PCI compliance Detective scan... `n"
 	if($PSBoundParameters.ContainsKey('IsServerAD')) {
-		.\pcicmdline.exe -file "C:\ndc\run.ndp" -outdir "C:\ndc\results"
+		.\pcicmdline.exe -file "C:\ndc\run.ndp" -outdir "C:\ndc\pciresults"
 	} else {
-		.\pcidc.exe -file "C:\ndc\run.ndp" -outdir "C:\ndc\results"
+		.\pcidc.exe -file "C:\ndc\run.ndp" -outdir "C:\ndc\pciresults"
 	}
+	
+	# send results to network detective collector
+	Start-Sleep -s 2
+	.\ndconnector.exe -ID $NDConnectorID -d "C:\ndc\pciresults" -zipname $env:computername-PCI	
 }
 
 # run hipaa detective data collector
 if($PSBoundParameters.ContainsKey('wantHIPAA')) {
     Write-Output "HIPAA compliance Detective scan... `n"
 	if($PSBoundParameters.ContainsKey('IsServerAD')) {
-		.\hipaacmdline.exe -file "C:\ndc\run.ndp" -outdir "C:\ndc\results"
+		.\hipaacmdline.exe -file "C:\ndc\run.ndp" -outdir "C:\ndc\hipaaresults"
 	} else {
-		.\hipaadc.exe -file "C:\ndc\run.ndp" -outdir "C:\ndc\results"
+		.\hipaadc.exe -file "C:\ndc\run.ndp" -outdir "C:\ndc\hipaaresults"
 	}
+	
+	# send results to network detective collector
+	Start-Sleep -s 2
+	.\ndconnector.exe -ID $NDConnectorID -d "C:\ndc\hipaaresults" -zipname $env:computername-HIPAA	
 }
-
-# send results to network detective collector
-Start-Sleep -s 2
-.\ndconnector.exe -ID $NDConnectorID -d "C:\ndc\results" -zipname $env:computername-ND
 
 # go back to C:
 cd C:\
