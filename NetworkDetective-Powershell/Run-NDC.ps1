@@ -201,7 +201,6 @@ if($PSBoundParameters.ContainsKey('IsServerAD')) {
 	
     -scantype
     ndc,ldc,sdc,sdcnet
-	hipaadeep
 	-pcitype
 	net	
     " | out-file -filepath "C:\ndc\run.ndp"
@@ -249,7 +248,6 @@ if($PSBoundParameters.ContainsKey('IsServerAD')) {
 
     -scantype
     ndc,ldc,sdc,sdcnet
-	hipaadeep
 	-pcitype
 	net	
     " | out-file -filepath "C:\ndc\run.ndp"
