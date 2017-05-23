@@ -4,8 +4,8 @@ param (
     [switch]$wantHIPAA,
     [switch]$wantPCI,
 
-    [string]$ADUserCred = "@DomainName@\@DomainAdmin@",
-    [string]$ADUserPswd = "@DomainAdminPwd@",
+    [string]$ADUserCred = "DomainName\DomainAdmin",
+    [string]$ADUserPswd = "DomainAdminPwd",
 
     [string]$LocalUser = "Test",
     [string]$LocalPswd = "Password1",
@@ -13,13 +13,107 @@ param (
     [string]$NDConnectorID = "ConectorIDHere!"
 )
 
+# some helper functions to help make the ip range
+# from: http://blog.tyang.org/2012/02/09/powershell-script-calculate-first-and-last-ip-of-a-subnet/
+function ConvertTo-Binary ($strDecimal)
+{
+	$strBinary = [Convert]::ToString($strDecimal, 2)
+	if ($strBinary.length -lt 8)
+	{
+		while ($strBinary.length -lt 8)
+		{
+			$strBinary = "0"+$strBinary
+		}
+	}
+	Return $strBinary
+}
+function Convert-IP-To-Binary ($strIP)
+{
+	$strBinaryIP = $null
+
+	$arrSections = @()
+	$arrSections += $strIP.split(".")
+	foreach ($section in $arrSections)
+	{
+		if ($strBinaryIP -ne $null)
+		{
+			$strBinaryIP = $strBinaryIP+"."
+		}
+		$strBinaryIP = $strBinaryIP+(ConvertTo-Binary $section)
+			
+	}
+
+	Return $strBinaryIP
+}
+Function Convert-SubnetMask-To-Binary ($strSubnetMask)
+{
+	$strBinarySubnetMask = $null
+
+	$arrSections = @()
+	$arrSections += $strSubnetMask.split(".")
+	foreach ($section in $arrSections)
+	{
+		if ($strBinarySubnetMask -ne $null)
+		{
+			$strBinarySubnetMask = $strBinarySubnetMask+"."
+		}
+		$strBinarySubnetMask = $strBinarySubnetMask+(ConvertTo-Binary $section)
+			
+	}
+
+	Return $strBinarySubnetMask
+}
+Function Convert-BinaryIPAddress ($BinaryIP)
+{
+	$FirstSection = [Convert]::ToInt64(($BinaryIP.substring(0, 8)),2)
+	$SecondSection = [Convert]::ToInt64(($BinaryIP.substring(8,8)),2)
+	$ThirdSection = [Convert]::ToInt64(($BinaryIP.substring(16,8)),2)
+	$FourthSection = [Convert]::ToInt64(($BinaryIP.substring(24,8)),2)
+	$strIP = "$FirstSection`.$SecondSection`.$ThirdSection`.$FourthSection"
+	Return $strIP
+}
+
 Write-Output "`n"
 Write-Output "`n"
 Write-Output "`n"
 
 # generate ip range based on computer ip
-$iptest = ((ipconfig | findstr [0-9].\.)[0]).Split()[-1] -replace ".{3}$"
-$ipRanges = $iptest + "0" + "-" + $iptest + "255"
+$configs=gwmi win32_networkadapterconfiguration | where {$_.ipaddress -ne $null -and $_.defaultipgateway -eq $null}
+if ($configs -ne $null)
+{
+    # we want the first good adapter's ip, that will do
+	$ipaddr = $configs[0].IPAddress[0]
+	$maskaddr = $configs[0].IPSubnet[0]
+}
+else
+{
+	# put a default here...
+	$ipaddr = "192.168.1.5"
+	$maskaddr = "255.255.255.0"
+}
+
+$BinarySubnetMask = (Convert-SubnetMask-To-Binary $maskaddr).replace(".", "")
+$BinaryNetworkAddressSection = $BinarySubnetMask.replace("1", "")
+$BinaryNetworkAddressLength = $BinaryNetworkAddressSection.length
+$CIDR = 32 - $BinaryNetworkAddressLength
+$iAddressWidth = [System.Math]::Pow(2, $BinaryNetworkLength)
+$iAddressPool = $iAddressWidth -2
+$BinaryIP = (Convert-IP-To-Binary $ipaddr).Replace(".", "")
+$BinaryIPNetworkSection = $BinaryIP.substring(0, $CIDR)
+$BinaryIPAddressSection = $BinaryIP.substring($CIDR, $BinaryNetworkAddressLength)
+	
+# starting IP
+$FirstAddress = $BinaryNetworkAddressSection -replace "0$", "1"
+$BinaryFirstAddress = $BinaryIPNetworkSection + $FirstAddress
+$strFirstIP = Convert-BinaryIPAddress $BinaryFirstAddress
+	
+# ending IP
+$LastAddress = ($BinaryNetworkAddressSection -replace "0", "1") -replace "1$", "0"
+$BinaryLastAddress = $BinaryIPNetworkSection + $LastAddress
+$strLastIP = Convert-BinaryIPAddress $BinaryLastAddress
+
+# put together the ip range
+$ipRanges = ($strFirstIP) + "-" + ($strLastIP)
 
 # output parameters so we know whats going on...
 Write-Output "`n"
