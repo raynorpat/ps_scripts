@@ -19,7 +19,7 @@ Write-Output "`n"
 
 # generate ip range based on computer ip
 $iptest = ((ipconfig | findstr [0-9].\.)[0]).Split()[-1] -replace ".{3}$"
-$ipRanges = $iptest + ".0" + "-" + $iptest + ".255"
+$ipRanges = $iptest + "0" + "-" + $iptest + "255"
 
 # output parameters so we know whats going on...
 Write-Output "`n"
@@ -153,15 +153,15 @@ Write-Output "Start Time: $((Get-Date).ToString('hh:mm:ss'))`n`n"
 
 # run network detective data collector
 Write-Output "Network Detective scan... `n"
-.\nddc.exe -file "C:\ndc\run.ndp"
+.\nddc.exe -file "C:\ndc\run.ndp" -outdir "C:\ndc\results"
 
 # run pci detective data collector
 if($PSBoundParameters.ContainsKey('wantPCI')) {
     Write-Output "PCI compliance Detective scan... `n"
 	if($PSBoundParameters.ContainsKey('IsServerAD')) {
-		.\pcicmdline.exe -file "C:\ndc\run.ndp"
+		.\pcicmdline.exe -file "C:\ndc\run.ndp" -outdir "C:\ndc\results"
 	} else {
-		.\pcidc.exe -file "C:\ndc\run.ndp"
+		.\pcidc.exe -file "C:\ndc\run.ndp" -outdir "C:\ndc\results"
 	}
 }
 
