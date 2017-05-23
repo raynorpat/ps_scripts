@@ -125,6 +125,9 @@ if($PSBoundParameters.ContainsKey('wantPCI')) {
 if($PSBoundParameters.ContainsKey('wantHIPAA')) {
     Write-Output "  Will Perform HIPAA security scan.`r"
 }
+if($PSBoundParameters.ContainsKey('wantLocal')) {
+    Write-Output "  Will Perform Local Only scan.`r"
+}
 if($PSBoundParameters.ContainsKey('IsServerAD')) {
     Write-Output "  Running in Active Directory environment.`r"
     Write-Output "  ADUserCred = " $ADUserCred " `r"
