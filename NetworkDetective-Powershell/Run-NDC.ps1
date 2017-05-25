@@ -120,6 +120,7 @@ $ipRanges = ($strFirstIP) + "-" + ($strLastIP)
 # output parameters so we know whats going on...
 Write-Output "`n"
 Write-Output "Parameters:`r"
+Write-Output "Current user = " $env:username " `r"
 if($PSBoundParameters.ContainsKey('wantPCI')) {
     Write-Output "  Will Perform PCI security scan.`r"
 }
@@ -226,7 +227,7 @@ if($PSBoundParameters.ContainsKey('wantLocal')) {
 	#if($PSBoundParameters.ContainsKey('wantNet')) {
 		# run network detective data collector on the network
 		Write-Output "Network Detective network scan... `n"
-		.\nddc.exe -net -ipranges $ipRanges -nettimeout 1 -outdir "C:\ndc\netresults"
+		.\nddc.exe -net -ipranges $ipRanges -nettimeout 1 -skipspeedchecks -credsuser $LocalUser -credsepwd $LocalPswd -outdir "C:\ndc\netresults"
 
 		# send results to network detective collector
 		Start-Sleep -s 2
