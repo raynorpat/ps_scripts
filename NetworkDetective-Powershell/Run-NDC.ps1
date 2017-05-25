@@ -145,7 +145,7 @@ Write-Output "`n"
 # make temporary folders
 Write-Output "making temporary folders... `n"
 mkdir -force C:\ndc
-mkdir -force C:\ndc\ndresults
+mkdir -force C:\ndc\netresults
 mkdir -force C:\ndc\localresults
 mkdir -force C:\ndc\secresults
 mkdir -force C:\ndc\hipaaresults
@@ -221,15 +221,15 @@ Write-Output "Start Time: $((Get-Date).ToString('hh:mm:ss'))`n`n"
 if($PSBoundParameters.ContainsKey('wantLocal')) {
 	# run network detective data collector on the network
 	Write-Output "Network Detective network scan... `n"
-	.\nddc.exe -net -ipranges $ipRanges -outdir "C:\ndc\ndresults"
+	.\nddc.exe -net -ipranges $ipRanges -outdir "C:\ndc\netresults"
 	
-	# run network detective data collector
+	# run network detective data collector on the local machine
 	Write-Output "Network Detective local only scan... `n"
 	.\nddc.exe -local -silent -outdir "C:\ndc\localresults"
 	
 	# send results to network detective collector
 	Start-Sleep -s 2
-	.\ndconnector.exe -ID $NDConnectorID -d "C:\ndc\ndresults" -zipname $env:computername-NET
+	.\ndconnector.exe -ID $NDConnectorID -d "C:\ndc\netresults" -zipname $env:computername-NET
 	.\ndconnector.exe -ID $NDConnectorID -d "C:\ndc\localresults" -zipname $env:computername-LOCAL
 	
 	# run security data collector
@@ -253,7 +253,7 @@ if($PSBoundParameters.ContainsKey('wantLocal')) {
 	# run hipaa data collector
 	if($PSBoundParameters.ContainsKey('wantHIPAA')) {
 		Write-Output "HIPAA compliance Detective scan... `n"
-		.\hipaadc.exe -hipaadeep -outdir "C:\ndc\hipaaresults"
+		.\hipaadc.exe -outdir "C:\ndc\hipaaresults"
 		
 		# send results to network detective collector
 		Start-Sleep -s 2
@@ -262,11 +262,11 @@ if($PSBoundParameters.ContainsKey('wantLocal')) {
 } else {
 	# run network detective data collector
 	Write-Output "Network Detective Active Directory scan... `n"
-	.\nddc.exe -file "C:\ndc\run.ndp" -outdir "C:\ndc\ndresults"
+	.\nddc.exe -file "C:\ndc\run.ndp" -outdir "C:\ndc\netresults"
 	
 	# send results to network detective collector
 	Start-Sleep -s 2
-	.\ndconnector.exe -ID $NDConnectorID -d "C:\ndc\ndresults" -zipname $env:computername-ND
+	.\ndconnector.exe -ID $NDConnectorID -d "C:\ndc\netresults" -zipname $env:computername-NET
 	
 	# run pci data collector
 	if($PSBoundParameters.ContainsKey('wantPCI')) {
