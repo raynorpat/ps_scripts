@@ -146,6 +146,7 @@ Write-Output "`n"
 Write-Output "making temporary folders... `n"
 mkdir -force C:\ndc
 mkdir -force C:\ndc\ndresults
+mkdir -force C:\ndc\localresults
 mkdir -force C:\ndc\secresults
 mkdir -force C:\ndc\hipaaresults
 mkdir -force C:\ndc\pciresults
@@ -218,13 +219,18 @@ Write-Output "Start Time: $((Get-Date).ToString('hh:mm:ss'))`n`n"
 
 # see if we are doing a local only scan
 if($PSBoundParameters.ContainsKey('wantLocal')) {
+	# run network detective data collector on the network
+	Write-Output "Network Detective network scan... `n"
+	.\nddc.exe -net -ipranges $ipRanges -outdir "C:\ndc\ndresults"
+	
 	# run network detective data collector
 	Write-Output "Network Detective local only scan... `n"
-	.\nddc.exe -local -silent -outdir "C:\ndc\ndresults"
+	.\nddc.exe -local -silent -outdir "C:\ndc\localresults"
 	
 	# send results to network detective collector
 	Start-Sleep -s 2
-	.\ndconnector.exe -ID $NDConnectorID -d "C:\ndc\ndresults" -zipname $env:computername-ND
+	.\ndconnector.exe -ID $NDConnectorID -d "C:\ndc\ndresults" -zipname $env:computername-NET
+	.\ndconnector.exe -ID $NDConnectorID -d "C:\ndc\localresults" -zipname $env:computername-LOCAL
 	
 	# run security data collector
 	Write-Output "Security data collector scan... `n"
