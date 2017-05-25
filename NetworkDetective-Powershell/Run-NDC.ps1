@@ -228,7 +228,7 @@ if($PSBoundParameters.ContainsKey('wantLocal')) {
 	
 	# run security data collector
 	Write-Output "Security data collector scan... `n"
-	.\sddc.exe -common -sdfdir "C:\ndc\secresults"
+	.\sddc.exe -common -sdfbase $env:computername-SDF -sdfdir "C:\ndc\secresults"
 	
 	# send results to network detective collector
 	Start-Sleep -s 2
