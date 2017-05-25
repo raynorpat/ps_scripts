@@ -1,6 +1,7 @@
 # set variables from commandline
 param (
     [switch]$IsServerAD,
+	[switch]$wantNet,
 	[switch]$wantLocal,
     [switch]$wantHIPAA,
     [switch]$wantPCI,
@@ -128,6 +129,9 @@ if($PSBoundParameters.ContainsKey('wantHIPAA')) {
 if($PSBoundParameters.ContainsKey('wantLocal')) {
     Write-Output "  Will Perform Local Only scan.`r"
 }
+if($PSBoundParameters.ContainsKey('wantNet')) {
+    Write-Output "  Will Perform Additional Network scan.`r"
+}
 if($PSBoundParameters.ContainsKey('IsServerAD')) {
     Write-Output "  Running in Active Directory environment.`r"
     Write-Output "  ADUserCred = " $ADUserCred " `r"
@@ -219,9 +223,15 @@ Write-Output "Start Time: $((Get-Date).ToString('hh:mm:ss'))`n`n"
 
 # see if we are doing a local only scan
 if($PSBoundParameters.ContainsKey('wantLocal')) {
-	# run network detective data collector on the network
-	Write-Output "Network Detective network scan... `n"
-	.\nddc.exe -net -ipranges $ipRanges -outdir "C:\ndc\netresults"
+	#if($PSBoundParameters.ContainsKey('wantNet')) {
+		# run network detective data collector on the network
+		Write-Output "Network Detective network scan... `n"
+		.\nddc.exe -net -ipranges $ipRanges -nettimeout 1 -outdir "C:\ndc\netresults"
+
+		# send results to network detective collector
+		Start-Sleep -s 2
+		.\ndconnector.exe -ID $NDConnectorID -d "C:\ndc\netresults" -zipname $env:computername-NET
+	#}
 	
 	# run network detective data collector on the local machine
 	Write-Output "Network Detective local only scan... `n"
@@ -229,7 +239,6 @@ if($PSBoundParameters.ContainsKey('wantLocal')) {
 	
 	# send results to network detective collector
 	Start-Sleep -s 2
-	.\ndconnector.exe -ID $NDConnectorID -d "C:\ndc\netresults" -zipname $env:computername-NET
 	.\ndconnector.exe -ID $NDConnectorID -d "C:\ndc\localresults" -zipname $env:computername-LOCAL
 	
 	# run security data collector
