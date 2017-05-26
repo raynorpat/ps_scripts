@@ -238,7 +238,7 @@ if($PSBoundParameters.ContainsKey('wantLocal')) {
 	if($PSBoundParameters.ContainsKey('wantHIPAA')) {
 	    # run hipaa data collector
 		Write-Output "HIPAA compliance scan... `n"
-		.\hipaadc.exe -outdir "C:\ndc\hipaaresults"
+		.\hipaadc.exe -hipaadeep -outdir "C:\ndc\hipaaresults"
 		
 		# send results to network detective collector
 		Start-Sleep -s 2
