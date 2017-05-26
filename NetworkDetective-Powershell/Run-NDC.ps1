@@ -233,42 +233,41 @@ if($PSBoundParameters.ContainsKey('wantLocal')) {
 		Start-Sleep -s 2
 		.\ndconnector.exe -ID $NDConnectorID -d "C:\ndc\netresults" -zipname $env:computername-NET
 	#}
-	
-	# run network detective data collector on the local machine
-	Write-Output "Network Detective local only scan... `n"
-	.\nddc.exe -local -silent -outdir "C:\ndc\localresults"
-	
-	# send results to network detective collector
-	Start-Sleep -s 2
-	.\ndconnector.exe -ID $NDConnectorID -d "C:\ndc\localresults" -zipname $env:computername-LOCAL
-	
-	# run security data collector
-	Write-Output "Security data collector scan... `n"
-	.\sddc.exe -common -sdfbase $env:computername-SDF -sdfdir "C:\ndc\secresults"
-	
-	# send results to network detective collector
-	Start-Sleep -s 2
-	.\ndconnector.exe -ID $NDConnectorID -d "C:\ndc\secresults" -zipname $env:computername-SDF
-	
-	# run pci data collector
-	if($PSBoundParameters.ContainsKey('wantPCI')) {
-		Write-Output "PCI compliance Detective scan... `n"
-		.\pcidc.exe -outdir "C:\ndc\pciresults"
-	
-		# send results to network detective collector
-		Start-Sleep -s 2
-		.\ndconnector.exe -ID $NDConnectorID -d "C:\ndc\pciresults" -zipname $env:computername-PCI
-	}
-	
-	# run hipaa data collector
+
+    # run our scans...
 	if($PSBoundParameters.ContainsKey('wantHIPAA')) {
-		Write-Output "HIPAA compliance Detective scan... `n"
+	    # run hipaa data collector
+		Write-Output "HIPAA compliance scan... `n"
 		.\hipaadc.exe -outdir "C:\ndc\hipaaresults"
 		
 		# send results to network detective collector
 		Start-Sleep -s 2
 		.\ndconnector.exe -ID $NDConnectorID -d "C:\ndc\hipaaresults" -zipname $env:computername-HIPAA	
-	}
+	} elseif($PSBoundParameters.ContainsKey('wantPCI')) {
+        # run pci data collector
+		Write-Output "PCI compliance scan... `n"
+		.\pcidc.exe -outdir "C:\ndc\pciresults"
+	
+		# send results to network detective collector
+		Start-Sleep -s 2
+		.\ndconnector.exe -ID $NDConnectorID -d "C:\ndc\pciresults" -zipname $env:computername-PCI
+	} else {	
+	    # run network detective data collector on the local machine
+	    Write-Output "Network Detective local only scan... `n"
+	    .\nddc.exe -local -silent -outdir "C:\ndc\localresults"
+	
+	    # send results to network detective collector
+	    Start-Sleep -s 2
+	    .\ndconnector.exe -ID $NDConnectorID -d "C:\ndc\localresults" -zipname $env:computername-LOCAL
+	
+	    # run security data collector
+	    Write-Output "Security data collector scan... `n"
+	    .\sddc.exe -common -sdfbase $env:computername-SDF -sdfdir "C:\ndc\secresults"
+	
+	    # send results to network detective collector
+	    Start-Sleep -s 2
+	    .\ndconnector.exe -ID $NDConnectorID -d "C:\ndc\secresults" -zipname $env:computername-SDF
+    }
 } else {
 	# run network detective data collector
 	Write-Output "Network Detective Active Directory scan... `n"
@@ -278,18 +277,17 @@ if($PSBoundParameters.ContainsKey('wantLocal')) {
 	Start-Sleep -s 2
 	.\ndconnector.exe -ID $NDConnectorID -d "C:\ndc\netresults" -zipname $env:computername-NET
 	
-	# run pci data collector
+	# run our scans...
 	if($PSBoundParameters.ContainsKey('wantPCI')) {
+		# run pci data collector
 		Write-Output "PCI compliance Detective scan... `n"
 		.\pcicmdline.exe -file "C:\ndc\run.ndp" -outdir "C:\ndc\pciresults"
 		
 		# send results to network detective collector
 		Start-Sleep -s 2
 		.\ndconnector.exe -ID $NDConnectorID -d "C:\ndc\pciresults" -zipname $env:computername-PCI
-	}
-	
-	# run hipaa data collector
-	if($PSBoundParameters.ContainsKey('wantHIPAA')) {
+	} elseif($PSBoundParameters.ContainsKey('wantHIPAA')) {
+		# run hipaa data collector
 		Write-Output "HIPAA compliance Detective scan... `n"
 		.\hipaacmdline.exe -file "C:\ndc\run.ndp" -outdir "C:\ndc\hipaaresults"
 		
