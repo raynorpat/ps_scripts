@@ -230,7 +230,7 @@ Write-Output "Start Time: $((Get-Date).ToString('hh:mm:ss'))`n`n"
 
 # see if we are doing a local only scan
 if($PSBoundParameters.ContainsKey('wantLocal')) {
-	#if($PSBoundParameters.ContainsKey('wantNet')) {
+	if($PSBoundParameters.ContainsKey('wantNet')) {
 		# run network detective data collector on the network
 		Write-Output "Network scan... `n"
 		.\nddc.exe -net -ipranges $ipRanges -nettimeout 1 -skipspeedchecks -credsuser $LocalUser -credspwd $LocalPswd -outdir "C:\ndc\netresults"
@@ -238,7 +238,7 @@ if($PSBoundParameters.ContainsKey('wantLocal')) {
 		# send results to network detective collector
 		Start-Sleep -s 2
 		.\ndconnector.exe -ID $NDConnectorID -d "C:\ndc\netresults" -zipname $env:computername-NET
-	#}
+	}
 
     # run our scans...
 	if($PSBoundParameters.ContainsKey('wantHIPAA')) {
