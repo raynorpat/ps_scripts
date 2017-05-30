@@ -15,6 +15,8 @@ param (
     [string]$NDConnectorID = "ConectorIDHere!"
 )
 
+##############################################################################################
+
 # some helper functions to help make the ip range
 # from: http://blog.tyang.org/2012/02/09/powershell-script-calculate-first-and-last-ip-of-a-subnet/
 function ConvertTo-Binary ($strDecimal)
@@ -74,6 +76,45 @@ Function Convert-BinaryIPAddress ($BinaryIP)
 	$strIP = "$FirstSection`.$SecondSection`.$ThirdSection`.$FourthSection"
 	Return $strIP
 }
+
+##############################################################################################
+
+# Get the ID and security principal of the current user account
+$myWindowsID=[System.Security.Principal.WindowsIdentity]::GetCurrent()
+$myWindowsPrincipal=new-object System.Security.Principal.WindowsPrincipal($myWindowsID)
+ 
+# Get the security principal for the Administrator role
+$adminRole=[System.Security.Principal.WindowsBuiltInRole]::Administrator
+ 
+# Check to see if we are currently running "as Administrator"
+if ($myWindowsPrincipal.IsInRole($adminRole))
+{
+   # We are running "as Administrator" - so change the title and background color to indicate this
+   $Host.UI.RawUI.WindowTitle = $myInvocation.MyCommand.Definition + "(Elevated)"
+   $Host.UI.RawUI.BackgroundColor = "DarkBlue"
+   clear-host
+}
+else
+{
+   # We are not running "as Administrator" - so relaunch as administrator
+   
+   # Create a new process object that starts PowerShell
+   $newProcess = new-object System.Diagnostics.ProcessStartInfo "PowerShell";
+   
+   # Specify the current script path and name as a parameter
+   $newProcess.Arguments = $myInvocation.MyCommand.Definition;
+   
+   # Indicate that the process should be elevated
+   $newProcess.Verb = "runas";
+   
+   # Start the new process
+   [System.Diagnostics.Process]::Start($newProcess);
+   
+   # Exit from the current, unelevated, process
+   exit
+}
+
+##############################################################################################
 
 Write-Output "`n"
 Write-Output "`n"
@@ -146,6 +187,8 @@ Write-Output "  ipRanges = " $ipRanges " `r"
 Write-Output "  NDConnectorID = " $NDConnectorID " `r"
 Write-Output "`n"
 Write-Output "`n"
+
+##############################################################################################
 
 # make temporary folders
 Write-Output "making temporary folders... `n"
