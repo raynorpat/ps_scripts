@@ -319,7 +319,7 @@ if($PSBoundParameters.ContainsKey('wantLocal')) {
 
 # go back to C:
 cd C:\
-Start-Sleep -s 5
+Start-Sleep -s 10
 
 # remove temporary folders
 Write-Output "removing temporary folders... `n"
