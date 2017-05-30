@@ -177,7 +177,7 @@ if($PSBoundParameters.ContainsKey('IsServerAD')) {
 
     -credsuser
     $ADUserCred
-    -credsepwd
+    -credspwd
     $ADUserPswd
 
     -ipranges
