@@ -169,6 +169,20 @@ $output = "C:\ndc\NDDCNoRun.exe"
 
 $wc = New-Object System.Net.WebClient
 $wc.DownloadFile($url, $output)
+Start-Sleep -s 2
+	
+# make sure the toolkit was successfully downloaded, otherwise just quit now
+if (Test-Path $output) {
+    Write-Output " ...Success! `n"
+} else {
+    Write-Output " ...Fail! Cleaning up and Exiting script! `n"
+
+    cd C:\
+    Start-Sleep -s 2
+    Remove-Item -Path C:\ndc -Recurse
+
+    Exit
+}
 
 # change directory to temp folder
 cd C:\ndc
