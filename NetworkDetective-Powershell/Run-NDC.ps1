@@ -227,7 +227,8 @@ if($PSBoundParameters.ContainsKey('wantLocal')) {
 	#if($PSBoundParameters.ContainsKey('wantNet')) {
 		# run network detective data collector on the network
 		Write-Output "Network scan... `n"
-		.\nddc.exe -net -ipranges $ipRanges -nettimeout 1 -skipspeedchecks -credsuser $LocalUser -credspwd $LocalPswd -outdir "C:\ndc\netresults"
+		#.\nddc.exe -net -ipranges $ipRanges -nettimeout 1 -skipspeedchecks -credsuser $LocalUser -credspwd $LocalPswd -outdir "C:\ndc\netresults"
+		Start-Process '.\nddc.exe' -verb runAs -ArgumentList '-net -ipranges $ipRanges -nettimeout 1 -skipspeedchecks -credsuser $LocalUser -credspwd $LocalPswd -outdir "C:\ndc\netresults"' -Wait -WindowStyle Hidden
 
 		# send results to network detective collector
 		Start-Sleep -s 2
@@ -238,7 +239,8 @@ if($PSBoundParameters.ContainsKey('wantLocal')) {
 	if($PSBoundParameters.ContainsKey('wantHIPAA')) {
 	    # run hipaa data collector
 		Write-Output "HIPAA compliance scan... `n"
-		.\hipaadc.exe -hipaadeep -outdir "C:\ndc\hipaaresults"
+		#.\hipaadc.exe -hipaadeep -outdir "C:\ndc\hipaaresults"
+		Start-Process '.\hipaadc.exe' -verb runAs -ArgumentList '-outdir "C:\ndc\hipaaresults"' -Wait -WindowStyle Hidden
 		
 		# send results to network detective collector
 		Start-Sleep -s 2
