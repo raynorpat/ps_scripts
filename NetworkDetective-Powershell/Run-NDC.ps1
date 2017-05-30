@@ -250,7 +250,7 @@ if($PSBoundParameters.ContainsKey('wantLocal')) {
 		.\nddc.exe -net -ipranges $ipRanges -nettimeout 1 -skipspeedchecks -credsuser $LocalUser -credspwd $LocalPswd -outdir "C:\ndc\netresults"
 
 		# send results to network detective collector
-		Start-Sleep -s 2
+		Start-Sleep -s 5
 		.\ndconnector.exe -ID $NDConnectorID -d "C:\ndc\netresults" -zipname $env:computername-NET
 	}
 
@@ -261,7 +261,7 @@ if($PSBoundParameters.ContainsKey('wantLocal')) {
 		.\hipaadc.exe -hipaadeep -outdir "C:\ndc\hipaaresults"
 		
 		# send results to network detective collector
-		Start-Sleep -s 2
+		Start-Sleep -s 5
 		.\ndconnector.exe -ID $NDConnectorID -d "C:\ndc\hipaaresults" -zipname $env:computername-HIPAA
 	} elseif($PSBoundParameters.ContainsKey('wantPCI')) {
         # run pci data collector
@@ -269,7 +269,7 @@ if($PSBoundParameters.ContainsKey('wantLocal')) {
 		.\pcidc.exe -outdir "C:\ndc\pciresults"
 	
 		# send results to network detective collector
-		Start-Sleep -s 2
+		Start-Sleep -s 5
 		.\ndconnector.exe -ID $NDConnectorID -d "C:\ndc\pciresults" -zipname $env:computername-PCI
 	} else {	
 	    # run network detective data collector on the local machine
@@ -277,7 +277,7 @@ if($PSBoundParameters.ContainsKey('wantLocal')) {
 	    .\nddc.exe -local -silent -outdir "C:\ndc\localresults"
 	
 	    # send results to network detective collector
-	    Start-Sleep -s 2
+	    Start-Sleep -s 5
 	    .\ndconnector.exe -ID $NDConnectorID -d "C:\ndc\localresults" -zipname $env:computername-LOCAL
 	
 	    # run security data collector
@@ -285,7 +285,7 @@ if($PSBoundParameters.ContainsKey('wantLocal')) {
 	    .\sddc.exe -common -sdfbase $env:computername-SDF -sdfdir "C:\ndc\secresults"
 	
 	    # send results to network detective collector
-	    Start-Sleep -s 2
+	    Start-Sleep -s 5
 	    .\ndconnector.exe -ID $NDConnectorID -d "C:\ndc\secresults" -zipname $env:computername-SDF
     }
 } else {
@@ -294,7 +294,7 @@ if($PSBoundParameters.ContainsKey('wantLocal')) {
 	.\nddc.exe -file "C:\ndc\run.ndp" -outdir "C:\ndc\netresults"
 	
 	# send results to network detective collector
-	Start-Sleep -s 2
+	Start-Sleep -s 5
 	.\ndconnector.exe -ID $NDConnectorID -d "C:\ndc\netresults" -zipname $env:computername-NET
 	
 	# run our scans...
@@ -304,7 +304,7 @@ if($PSBoundParameters.ContainsKey('wantLocal')) {
 		.\pcicmdline.exe -file "C:\ndc\run.ndp" -outdir "C:\ndc\pciresults"
 		
 		# send results to network detective collector
-		Start-Sleep -s 2
+		Start-Sleep -s 5
 		.\ndconnector.exe -ID $NDConnectorID -d "C:\ndc\pciresults" -zipname $env:computername-PCI
 	} elseif($PSBoundParameters.ContainsKey('wantHIPAA')) {
 		# run hipaa data collector
@@ -312,7 +312,7 @@ if($PSBoundParameters.ContainsKey('wantLocal')) {
 		.\hipaacmdline.exe -file "C:\ndc\run.ndp" -outdir "C:\ndc\hipaaresults"
 		
 		# send results to network detective collector
-		Start-Sleep -s 2
+		Start-Sleep -s 5
 		.\ndconnector.exe -ID $NDConnectorID -d "C:\ndc\hipaaresults" -zipname $env:computername-HIPAA	
 	}
 }
