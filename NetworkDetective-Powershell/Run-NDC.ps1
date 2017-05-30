@@ -226,8 +226,8 @@ Write-Output "Start Time: $((Get-Date).ToString('hh:mm:ss'))`n`n"
 if($PSBoundParameters.ContainsKey('wantLocal')) {
 	#if($PSBoundParameters.ContainsKey('wantNet')) {
 		# run network detective data collector on the network
-		Write-Output "Network Detective network scan... `n"
-		.\nddc.exe -net -ipranges $ipRanges -nettimeout 1 -skipspeedchecks -credsuser $LocalUser -credsepwd $LocalPswd -outdir "C:\ndc\netresults"
+		Write-Output "Network scan... `n"
+		.\nddc.exe -net -ipranges $ipRanges -nettimeout 1 -skipspeedchecks -credsuser $LocalUser -credspwd $LocalPswd -outdir "C:\ndc\netresults"
 
 		# send results to network detective collector
 		Start-Sleep -s 2
@@ -253,7 +253,7 @@ if($PSBoundParameters.ContainsKey('wantLocal')) {
 		.\ndconnector.exe -ID $NDConnectorID -d "C:\ndc\pciresults" -zipname $env:computername-PCI
 	} else {	
 	    # run network detective data collector on the local machine
-	    Write-Output "Network Detective local only scan... `n"
+	    Write-Output "Local scan... `n"
 	    .\nddc.exe -local -silent -outdir "C:\ndc\localresults"
 	
 	    # send results to network detective collector
@@ -261,7 +261,7 @@ if($PSBoundParameters.ContainsKey('wantLocal')) {
 	    .\ndconnector.exe -ID $NDConnectorID -d "C:\ndc\localresults" -zipname $env:computername-LOCAL
 	
 	    # run security data collector
-	    Write-Output "Security data collector scan... `n"
+	    Write-Output "Security scan... `n"
 	    .\sddc.exe -common -sdfbase $env:computername-SDF -sdfdir "C:\ndc\secresults"
 	
 	    # send results to network detective collector
@@ -270,7 +270,7 @@ if($PSBoundParameters.ContainsKey('wantLocal')) {
     }
 } else {
 	# run network detective data collector
-	Write-Output "Network Detective Active Directory scan... `n"
+	Write-Output "Active Directory Network scan... `n"
 	.\nddc.exe -file "C:\ndc\run.ndp" -outdir "C:\ndc\netresults"
 	
 	# send results to network detective collector
@@ -280,7 +280,7 @@ if($PSBoundParameters.ContainsKey('wantLocal')) {
 	# run our scans...
 	if($PSBoundParameters.ContainsKey('wantPCI')) {
 		# run pci data collector
-		Write-Output "PCI compliance Detective scan... `n"
+		Write-Output "PCI compliance scan... `n"
 		.\pcicmdline.exe -file "C:\ndc\run.ndp" -outdir "C:\ndc\pciresults"
 		
 		# send results to network detective collector
@@ -288,7 +288,7 @@ if($PSBoundParameters.ContainsKey('wantLocal')) {
 		.\ndconnector.exe -ID $NDConnectorID -d "C:\ndc\pciresults" -zipname $env:computername-PCI
 	} elseif($PSBoundParameters.ContainsKey('wantHIPAA')) {
 		# run hipaa data collector
-		Write-Output "HIPAA compliance Detective scan... `n"
+		Write-Output "HIPAA compliance scan... `n"
 		.\hipaacmdline.exe -file "C:\ndc\run.ndp" -outdir "C:\ndc\hipaaresults"
 		
 		# send results to network detective collector
@@ -307,5 +307,4 @@ Remove-Item -Path C:\ndc -Recurse
 
 # and we are complete!
 $end_time = Get-Date
-Write-Output "Time taken to finish data collection: $((Get-Date).Subtract($start_time).Seconds) second(s)"
 Write-Output "End Time: $((Get-Date).ToString('hh:mm:ss'))`n`n"
