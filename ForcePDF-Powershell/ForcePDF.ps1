@@ -1,6 +1,5 @@
 # creates a "drive" to access the HKCR (HKEY_CLASSES_ROOT)
-New-PSDrive -Name HKCR -PSProvider Registry -Root 
-HKEY_CLASSES_ROOT
+New-PSDrive -Name HKCR -PSProvider Registry -Root HKEY_CLASSES_ROOT
 
 If ('HKCR:\.pdf')
 {
