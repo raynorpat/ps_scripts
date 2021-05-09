@@ -17,6 +17,12 @@ LABEL bootlocal
 LABEL wds
 	MENU LABEL ^Windows Deployment Services
 	KERNEL pxeboot.0
+	
+# Run netboot.xyz iso
+LABEL netboot
+	MENU LABEL ^NETBOOT.XYZ
+	KERNEL memdisk
+	append iso raw initrd=/Linux/netboot.xyz.iso
 
 # Run Windows 9x Iso
 LABEL windows9x
