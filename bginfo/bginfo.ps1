@@ -242,9 +242,9 @@ Function Set-Wallpaper {
 $WindowsVersion =(Get-ItemProperty -Path "HKLM:\HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion" -Name ReleaseID).ReleaseID
 
 $BoottimeRaw = systeminfo | find "System Boot Time"
-$Boottime = $BoottimeRaw.substring(27) 
+$Boottime = $BoottimeRaw.substring(27) 
 
-$IPAddress = (Get-NetIPAddress -AddressFamily IPv4 -InterfaceAlias Ethernet).IPAddress
+$IPAddress = (Get-NetIPAddress -AddressFamily IPv4 -AddressState Preferred).IPAddress[0]
 
 # writing info to the background
 $t = @"
