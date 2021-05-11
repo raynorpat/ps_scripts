@@ -19,13 +19,12 @@
     Run script from (an elevated) PowerShell console  
   
     .NOTES
-    Author: Shawn Masterson
-    Last Updated: December 2017
-    Version: 9.5.3
+    Author: Shawn Masterson, edited by Pat Raynor
+    Last Updated: May 2021
+    Version: 9.5.4.1
   
     Requires:
-    Veeam Backup & Replication v9.5 Update 3 (full or console install)
-    VMware Infrastructure
+    Veeam Backup & Replication v10 (full or console install)
 
 #> 
 
@@ -36,7 +35,7 @@ $vbrServer = "VEEAMBDR1"
 # 24, 48, "Weekly", "Monthly"
 $reportMode = 24
 # Report Title
-$rptTitle = "Resale1 Veeam Report"
+$rptTitle = "BDR Veeam Report"
 # Show VBR Server name in report header
 $showVBR = $true
 # HTML Report Width (Percent)
@@ -54,13 +53,13 @@ $launchHTML = $false
 
 # Email configuration
 $sendEmail = $true
-$emailHost = "mail.ouac1.com"
+$emailHost = "mail.xxx.com"
 $emailPort = 25
 $emailEnableSSL = $false
 $emailUser = ""
 $emailPass = ""
-$emailFrom = "alerts@ouac1.com"
-$emailTo = "alerts@ouac1.com"
+$emailFrom = ""
+$emailTo = ""
 # Send HTML report as attachment (else HTML report is body)
 $emailAttach = $false
 # Email Subject 
@@ -299,30 +298,35 @@ $showReplicaTarget = $false
 # Show Veeam Services Info (Windows Services)
 $showServices = $false
 # Show only Services that are NOT running
-$hideRunningSvc = $true
+$hideRunningSvc = $false
 # Show License expiry info
 $showLicExp = $true
 
 # Highlighting Thresholds
 # Repository Free Space Remaining %
-$repoCritical = 10
-$repoWarn = 20
+$repoCritical = 5
+$repoWarn = 10
 # Replica Target Free Space Remaining %
-$replicaCritical = 10
-$replicaWarn = 20
+$replicaCritical = 5
+$replicaWarn = 10
 # License Days Remaining
 $licenseCritical = 30
 $licenseWarn = 90
 #endregion
  
 #region VersionInfo
-$MVRversion = "9.5.4"
+$MVRversion = "9.5.4.1"
+# Version 9.5.4.1 - raynorpat
+# Tweaks to repository free space thresholds
+# Replace WMI registry check for license info with a direct grab with Get-VBRInstalledLicense, fixes licensing check with Veeam 10 and later
+# Edited link at bottom of report to link to this GitHub repo
+#
 # Version 9.5.4 - raynorpat
 # Added -WarningAction SilentlyContinue | where {$_.BackupPlatform.Platform -ne 'ELinuxPhysical' -and $_.BackupPlatform.Platform -ne 'EEndPoint'} to Get-VBRJob call
 #  - prevents issues from Veeam v10 from grabbing deprecated agent jobs
 # Removed check for Veeam v9 or lower
 # Changed Get-VBREP calls to use the more basic Get-VBRComputerBackupJob calls for use with Veeam 10 Agent backups
-
+#
 # Version 9.5.3 - SM
 # Updated property changes introduced in VBR 9.5 Update 3
 # Version 9.5.1.1 - SM
@@ -1155,19 +1159,23 @@ Function Get-VeeamSupportDate {
   param (
     [string]$vbrServer
   ) 
-  # Query (remote) registry with WMI for license info
+  # Query for license info
   Try{
-    $wmi = get-wmiobject -list "StdRegProv" -namespace root\default -computername $vbrServer -ErrorAction Stop
-    $hklm = 2147483650
-    $bKey = "SOFTWARE\Veeam\Veeam Backup and Replication\license"
-    $bValue = "Lic1"
-    $regBinary = ($wmi.GetBinaryValue($hklm, $bKey, $bValue)).uValue
-    $veeamLicInfo = [string]::Join($null, ($regBinary | % { [char][int]$_; }))
+    $license = Get-VBRInstalledLicense
+    $expirationDate = $license.ExpirationDate
+    #$wmi = get-wmiobject -list "StdRegProv" -namespace root\default -computername $vbrServer -ErrorAction Stop
+    #$hklm = 2147483650
+    #$bKey = "SOFTWARE\Veeam\Veeam Backup and Replication\license"
+    #$bValue = "Lic1"
+    #$regBinary = ($wmi.GetBinaryValue($hklm, $bKey, $bValue)).uValue
+    #$regBinary = (Get-Item 'HKLM:\SOFTWARE\Veeam\Veeam Backup and Replication\license').GetValue('Lic1')
+    
+    #$veeamLicInfo = [string]::Join($null, ($regBinary | % { [char][int]$_; }))
     # Convert Binary key
-    $pattern = "expiration date\=\d{1,2}\/\d{1,2}\/\d{1,4}"
-    $expirationDate = [regex]::matches($VeeamLicInfo, $pattern)[0].Value.Split("=")[1]
-    $datearray = $expirationDate -split '/'
-    $expirationDate = Get-Date -Day $datearray[0] -Month $datearray[1] -Year $datearray[2]
+    #$pattern = "expiration date\=\d{1,2}\/\d{1,2}\/\d{1,4}"
+    #$expirationDate = [regex]::matches($VeeamLicInfo, $pattern)[0].Value.Split("=")[1]
+    #$datearray = $expirationDate -split '/'
+    #$expirationDate = Get-Date -Day $datearray[0] -Month $datearray[1] -Year $datearray[2]
     $totalDaysLeft = ($expirationDate - (get-date)).Totaldays.toString().split(",")[0]
     $totalDaysLeft = [int]$totalDaysLeft
     $objoutput = New-Object -TypeName PSObject -Property @{
@@ -1176,8 +1184,8 @@ Function Get-VeeamSupportDate {
     }
   } Catch{
     $objoutput = New-Object -TypeName PSObject -Property @{
-      ExpDate = "WMI Connection Failed"
-      DaysRemain = "WMI Connection Failed"
+      ExpDate = "License Date Check Failed"
+      DaysRemain = "License Date Check Failed"
     }
   }
   $objoutput
@@ -1466,7 +1474,7 @@ $HTMLbreak = @"
 $footerObj = @"
 <table>
                 <tr>
-                    <td style="height: 15px;background-color: #ffffff;border: none;color: #626365;font-size: 10px;text-align:center;">My Veeam Report maintained by <a href="http://blog.smasterson.com" target="_blank">http://blog.smasterson.com</a></td>
+                    <td style="height: 15px;background-color: #ffffff;border: none;color: #626365;font-size: 10px;text-align:center;">My Veeam Report maintained at <a href="https://github.com/raynorpat/ps_scripts/tree/master/VeeamReport" target="_blank">https://github.com/raynorpat/ps_scripts</a></td>
                 </tr>
             </table>
         </center>
