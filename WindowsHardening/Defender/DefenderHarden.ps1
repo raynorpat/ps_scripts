@@ -2,7 +2,7 @@ Write-Host "Enabling Windows Defender Protections and Features" -ForegroundColor
 
 # Download WDEP xml
 $wc = New-Object System.Net.WebClient
-$wc.DownloadFile('https://raw.githubusercontent.com/simeononsecurity/Windows-Defender-Hardening/main/Files/Windows%20Defender%20Configuration%20Files/DOD_EP_V3.xml','C:\temp\Windows Defender\DOD_EP_V3.xml')
+$wc.DownloadFile('https://raw.githubusercontent.com/raynorpat/ps_scripts/master/WindowsHardening/Defender/DOD_EP_V3.xml','C:\temp\Windows Defender\DOD_EP_V3.xml')
 
 # Enable Windows Defender Exploit Protection
 Write-Host "Enabling Windows Defender Exploit Protections..."
@@ -10,12 +10,12 @@ Set-ProcessMitigation -PolicyFilePath "C:\temp\Windows Defender\DOD_EP_V3.xml"
 
 # Download WDAC xml
 $wc = New-Object System.Net.WebClient
-$wc.DownloadFile('https://raw.githubusercontent.com/simeononsecurity/Windows-Defender-Hardening/main/Files/Windows%20Defender%20Configuration%20Files/WDAC_V1_Recommended_Enforced.xml','C:\temp\Windows Defender\WDAC_V1_Recommended_Enforced.xml')
+$wc.DownloadFile('https://raw.githubusercontent.com/raynorpat/ps_scripts/master/WindowsHardening/Defender/WDAC_V1_Recommended_Audit.xml','C:\temp\Windows Defender\WDAC_V1_Recommended_Audit.xml')
 
 # Enable Windows Defender Application Control
 #https://docs.microsoft.com/en-us/windows/security/threat-protection/windows-defender-application-control/select-types-of-rules-to-create
 Write-Host "Enabling Windows Defender Application Control..."
-$PolicyPath = "C:\temp\Windows Defender\WDAC_V1_Recommended_Enforced.xml"
+$PolicyPath = "C:\temp\Windows Defender\WDAC_V1_Recommended_Audit.xml"
 ForEach ($PolicyNumber in (1..10)) {
     Write-Host "Importing WDAC Policy Option $PolicyNumber"
     Set-RuleOption -FilePath $PolicyPath -Option $PolicyNumber
