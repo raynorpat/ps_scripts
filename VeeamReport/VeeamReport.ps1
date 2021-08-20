@@ -303,7 +303,7 @@ $hideRunningSvc = $false
 $showLicExp = $true
 
 # Show Cloud Connect info
-$showCloudConnect = $true
+$showCloudConnect = $false
 if($showCloudConnect) {
     # make sure we are have way decent looking report when Cloud Connect is enabled
     $showSummaryBk = $false
