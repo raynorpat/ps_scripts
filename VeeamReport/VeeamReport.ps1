@@ -20,8 +20,8 @@
   
     .NOTES
     Author: Shawn Masterson, edited by Pat Raynor
-    Last Updated: May 2021
-    Version: 9.5.4.1
+    Last Updated: August 2021
+    Version: 9.5.4.2
   
     Requires:
     Veeam Backup & Replication v10 (full or console install)
