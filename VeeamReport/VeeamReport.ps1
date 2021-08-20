@@ -315,7 +315,13 @@ $licenseWarn = 90
 #endregion
  
 #region VersionInfo
-$MVRversion = "9.5.4.1"
+$MVRversion = "9.5.4.2"
+# Version 9.5.4.2 - raynorpat
+# Added Veeam v11 check at start of script
+# Veeam Veeam v11 support
+#  - Removed PSSnapIn as everything is now a standard PowerShell module
+#  - Resolved issues with checking repository space
+#
 # Version 9.5.4.1 - raynorpat
 # Tweaks to repository free space thresholds
 # Replace WMI registry check for license info with a direct grab with Get-VBRInstalledLicense, fixes licensing check with Veeam 10 and later
@@ -570,12 +576,10 @@ $MVRversion = "9.5.4.1"
 #endregion
 
 #region Connect
-# Load Veeam Snapin
-If (!(Get-PSSnapin -Name VeeamPSSnapIn -ErrorAction SilentlyContinue)) {
-  If (!(Add-PSSnapin -PassThru VeeamPSSnapIn)) {
-    Write-Error "Unable to load Veeam snapin" -ForegroundColor Red
-    Exit
-  }
+If ($VeeamVersion -lt 11.0.0.836) {
+  Write-Host "Script requires Veeam v11 or greater" -ForegroundColor Red
+  Write-Host "Version detected - $VeeamVersion" -ForegroundColor Red
+  exit
 }
 
 # Connect to VBR server
@@ -1025,7 +1029,7 @@ Function Get-VBRRepoInfo {
         "HPStoreOnce" {"HP StoreOnce"}
         default {"Unknown"}   
       }
-      $outputObj = Build-Object $r.Name $($r.GetHost()).Name.ToLower() $r.Path $r.info.CachedFreeSpace $r.Info.CachedTotalSpace $r.Options.MaxTaskCount $rType
+      $outputObj = Build-Object $r.Name $($r.GetHost()).Name.ToLower() $r.Path $r.GetContainer().CachedFreeSpace.InBytes $r.GetContainer().CachedTotalSpace.InBytes $r.Options.MaxTaskCount $rType
     }
     $outputAry += $outputObj
   }
@@ -1072,7 +1076,7 @@ Function Get-VBRSORepoInfo {
           "HPStoreOnce" {"HP StoreOnce"}
           default {"Unknown"}     
         }
-        $outputObj = Build-Object $rs.Name $r.Name $($r.GetHost()).Name.ToLower() $r.Path $r.info.CachedFreeSpace $r.Info.CachedTotalSpace $r.Options.MaxTaskCount $rType
+        $outputObj = Build-Object $rs.Name $r.Name $($r.GetHost()).Name.ToLower() $r.Path $r.GetContainer().CachedFreeSpace.InBytes $r.GetContainer().CachedTotalSpace.InBytes $r.Options.MaxTaskCount $rType
         $outputAry += $outputObj
       }
     } 
