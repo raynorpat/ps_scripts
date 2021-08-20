@@ -21,7 +21,7 @@
     .NOTES
     Author: Shawn Masterson, edited by Pat Raynor
     Last Updated: August 2021
-    Version: 9.5.4.2
+    Version: 9.5.5
   
     Requires:
     Veeam Backup & Replication v10 (full or console install)
@@ -302,6 +302,16 @@ $hideRunningSvc = $false
 # Show License expiry info
 $showLicExp = $true
 
+# Show Cloud Connect info
+$showCloudConnect = $true
+if($showCloudConnect) {
+    # make sure we are have way decent looking report when Cloud Connect is enabled
+    $showSummaryBk = $false
+    $showJobsBk = $false
+    $showSummaryBc = $false
+    $showSummaryEp = $false
+}
+
 # Highlighting Thresholds
 # Repository Free Space Remaining %
 $repoCritical = 5
@@ -315,7 +325,10 @@ $licenseWarn = 90
 #endregion
  
 #region VersionInfo
-$MVRversion = "9.5.4.2"
+$MVRversion = "9.5.5"
+# Version 9.5.5 - raynorpat
+# Added support for Cloud Connect backup information
+#
 # Version 9.5.4.2 - raynorpat
 # Added Veeam v11 check at start of script
 # Veeam Veeam v11 support
@@ -577,9 +590,9 @@ $MVRversion = "9.5.4.2"
 
 #region Connect
 If ($VeeamVersion -lt 11.0.0.836) {
-  Write-Host "Script requires Veeam v11 or greater" -ForegroundColor Red
-  Write-Host "Version detected - $VeeamVersion" -ForegroundColor Red
-  exit
+    Write-Host "Script requires Veeam v11 or greater" -ForegroundColor Red
+    Write-Host "Version detected - $VeeamVersion" -ForegroundColor Red
+    exit
 }
 
 # Connect to VBR server
@@ -697,6 +710,26 @@ $repoList = Get-VBRBackupRepository
 $repoListSo = Get-VBRBackupRepository -ScaleOut
 # Get all Tape Servers
 $tapesrvList = Get-VBRTapeServer
+
+# Get CloudConnect tenant info
+$VeeamTenantInfo = @()
+foreach($VBRCloudTenant in (Get-VBRCloudTenant | Sort Name)) {
+    $UsedSpace = $([math]::Truncate($VBRCloudTenant.Resources.UsedSpace / 1024))
+    $UsedSpacePercentage = $VBRCloudTenant.Resources.UsedSpacePercentage
+
+    $vbrCCHash = [ordered]@{
+        "Name" = $VBRCloudTenant.Name
+        "VMs" = $VBRCloudTenant.RentalVMBackupCount
+        "Workstations" = $VBRCloudTenant.RentalWorkstationBackupCount
+        "Servers" = $VBRCloudTenant.RentalServerBackupCount
+        "Used Space (MB)" = $UsedSpace
+        "Used Space (%)" = $UsedSpacePercentage
+        "Last Active" = $VBRCloudTenant.LastActive
+        "Last Result" = $VBRCloudTenant.LastResult
+    }
+
+    $VeeamTenantInfo += New-Object PSObject -Property $vbrCCHash
+}
 
 # Convert mode (timeframe) to hours
 If ($reportMode -eq "Monthly") {
@@ -992,6 +1025,50 @@ Function Get-VBRProxyInfo {
   End {
     $outputAry
   }   
+}
+
+Function Get-VBRRepoInfo {
+  [CmdletBinding()]
+  param (
+    [Parameter(Position=0, ValueFromPipeline=$true)]
+    [PSObject[]]$Repository
+  )
+  Begin {
+    $outputAry = @()
+    Function Build-Object {param($name, $repohost, $path, $free, $total, $maxtasks, $rtype)
+      $repoObj = New-Object -TypeName PSObject -Property @{
+        Target = $name
+        RepoHost = $repohost
+        Storepath = $path
+        StorageFree = [Math]::Round([Decimal]$free/1GB,2)
+        StorageTotal = [Math]::Round([Decimal]$total/1GB,2)
+        FreePercentage = [Math]::Round(($free/$total)*100)
+        MaxTasks = $maxtasks
+        rType = $rtype
+      }
+      Return $repoObj
+    }
+  }
+  Process {
+    Foreach ($r in $Repository) {
+      # Refresh Repository Size Info
+      [Veeam.Backup.Core.CBackupRepositoryEx]::SyncSpaceInfoToDb($r, $true)
+      $rType = switch ($r.Type) {
+        "WinLocal" {"Windows Local"}
+        "LinuxLocal" {"Linux Local"}
+        "CifsShare" {"CIFS Share"}
+        "DataDomain" {"Data Domain"}
+        "ExaGrid" {"ExaGrid"}
+        "HPStoreOnce" {"HP StoreOnce"}
+        default {"Unknown"}   
+      }
+      $outputObj = Build-Object $r.Name $($r.GetHost()).Name.ToLower() $r.Path $r.GetContainer().CachedFreeSpace.InBytes $r.GetContainer().CachedTotalSpace.InBytes $r.Options.MaxTaskCount $rType
+    }
+    $outputAry += $outputObj
+  }
+  End {
+    $outputAry
+  }
 }
 
 Function Get-VBRRepoInfo {
@@ -4255,6 +4332,22 @@ If ($showLicExp) {
   $bodyLicense = $licHead + "License/Support Renewal Date" + $subHead02 + $bodyLicense
 }
 
+# Get Connect Cloud Info
+If ($showCloudConnect) {
+    If ($VeeamTenantInfo -ne $null) {
+        $arrCloudConnect = $VeeamTenantInfo
+    }
+    $bodyCloudConnect = $arrCloudConnect | ConvertTo-HTML -Fragment
+    If ($bodyCloudConnect.LastResult -match "Success") {
+        $cloudConnectHead = $subHead01suc
+    } ElseIf ($bodyCloudConnect.LastResult -match "Warning") {
+        $cloudConnectHead = $subHead01war
+    } Else {
+        $cloudConnectHead = $subHead01
+    }
+    $bodyCloudConnect = $cloudConnectHead + "Cloud Connect Summary" + $subHead02 + $bodyCloudConnect
+}
+
 # Combine HTML Output
 $htmlOutput = $headerObj + $bodyTop + $bodySummaryProtect + $bodySummaryBK + $bodySummaryRp + $bodySummaryBc + $bodySummaryTp + $bodySummaryEp + $bodySummarySb
   
@@ -4296,6 +4389,12 @@ $htmlOutput += $bodyJobsBc + $bodyJobSizeBc + $bodyAllSessBc + $bodyAllTasksBc +
 
 If ($bodyJobsBc + $bodyJobSizeBc + $bodyAllSessBc + $bodyAllTasksBc + $bodySessIdleBc + $bodyTasksPendingBc + $bodyRunningBc + $bodyTasksRunningBc + $bodySessWFBc + $bodyTaskWFBc + $bodySessSuccBc + $bodyTaskSuccBc) {
   $htmlOutput += $HTMLbreak
+}
+
+$htmlOutput += $bodyCloudConnect
+
+If ($bodyCloudConnect) {
+    $htmlOutput += $HTMLbreak
 }
 
 $htmlOutput += $bodyJobsTp + $bodyAllSessTp + $bodyAllTasksTp + $bodyWaitingTp + $bodySessIdleTp + $bodyTasksPendingTp + $bodyRunningTp + $bodyTasksRunningTp + $bodySessWFTp + $bodyTaskWFTp + $bodySessSuccTp + $bodyTaskSuccTp
