@@ -1,0 +1,60 @@
+DEFAULT	vesamenu.c32
+PROMPT	0
+
+MENU TITLE PXE Boot Menu
+MENU INCLUDE pxelinux.cfg/graphics.conf
+MENU AUTOBOOT Starting Local System in 8 seconds
+
+# Exit PXE Linux & boot normally
+LABEL bootlocal
+	menu label ^Boot Normally
+	menu default
+	localboot 0
+	timeout 80
+	TOTALTIMEOUT 9000
+
+# Run WDS
+LABEL wds
+	MENU LABEL ^Windows Deployment Services
+	KERNEL pxeboot.0
+	
+# Run netboot.xyz iso
+LABEL netboot
+	MENU LABEL ^NETBOOT.XYZ
+	KERNEL memdisk
+	append iso raw initrd=/Linux/netboot.xyz.iso
+
+# Run Windows 9x Iso
+LABEL windows9x
+	MENU LABEL Windows ^9x ISO
+	KERNEL memdisk
+	append iso raw initrd=/Linux/win9x.iso
+
+# Run Windows XP SP3 Iso
+LABEL windowsxp
+	MENU LABEL Windows ^XP SP3 ISO
+	KERNEL memdisk
+	append iso raw initrd=/Linux/winXPSP3.iso
+
+# Run Memtest
+LABEL memtest
+	MENU LABEL ^Memtest
+	KERNEL memdisk
+	append iso raw initrd=mt531b.iso
+
+# Run PartEd Magic 
+LABEL partedmagic
+	MENU LABEL ^PartEd Magic 2019
+	KERNEL memdisk
+	append iso raw initrd=/Linux/pmagic_2019_05_30.iso
+
+# Run DBAN
+LABEL dban-autonuke
+	MENU LABEL ^DBAN Autonuke
+	KERNEL /Linux/dban/dban.bzi
+	append nuke="dwipe --autonuke"
+
+# Exit PXE Linux
+LABEL Abort
+	MENU LABEL E^xit
+	KERNEL abortpxe.0
