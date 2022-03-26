@@ -1,1 +1,0 @@
-.\vs_enterprise.exe --layout .\
