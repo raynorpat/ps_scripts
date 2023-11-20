@@ -14,8 +14,8 @@ $StartDTM = (Get-Date)
 
 $Vendor = "Veeam"
 $Product = "Agent"
-$PackageName = "VeeamAgentWindows_5.0.0.4301"
-$Version = "5.0.0.4301"
+$PackageName = "VeeamAgentWindows_6.0.2.1090"
+$Version = "6.0.2.1090"
 $InstallerType = "exe"
 $Source = "$PackageName" + "." + "$InstallerType"
 $LogPS = "${env:SystemRoot}" + "\Temp\$Vendor $Product $Version PS Wrapper.log"
