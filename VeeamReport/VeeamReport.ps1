@@ -20,8 +20,8 @@
   
     .NOTES
     Author: Shawn Masterson, edited by Pat Raynor
-    Last Updated: August 2021
-    Version: 9.5.5
+    Last Updated: Janurary 2024
+    Version: 9.5.6
   
     Requires:
     Veeam Backup & Replication v10 (full or console install)
@@ -325,7 +325,12 @@ $licenseWarn = 90
 #endregion
  
 #region VersionInfo
-$MVRversion = "9.5.5"
+$MVRversion = "9.5.6"
+# Version 9.5.6 - raynorpat
+# Added name for Wasabi S3 repositories in Get-VBRRepoInfo
+# Added support for Veeam v12 rename of Backup Copy job from BackupSync to SimpleBackupCopyWorker
+# Added hack to prevent warning for no space detection on Wasabi repositories
+#
 # Version 9.5.5 - raynorpat
 # Added support for Cloud Connect backup information
 #
@@ -625,7 +630,7 @@ $allJobsBk = @($allJobs | ?{$_.JobType -eq "Backup"})
 # Get all Replication Jobs
 $allJobsRp = @($allJobs | ?{$_.JobType -eq "Replica"})
 # Get all Backup Copy Jobs
-$allJobsBc = @($allJobs | ?{$_.JobType -eq "BackupSync"})
+$allJobsBc = @($allJobs | ?{($_.JobType -eq "BackupSync") -or ($_.JobType -eq "SimpleBackupCopyWorker")})
 # Get all Tape Jobs
 $allJobsTp = @()
 If ($showSummaryTp + $showJobsTp + $showAllSessTp + $showAllTasksTp +
@@ -684,7 +689,7 @@ If ($showBackupSizeBk + $showBackupSizeBc + $showBackupSizeEp) {
 # Get Backup Job Backups
 $backupsBk = @($jobBackups | ?{$_.JobType -eq "Backup"})
 # Get Backup Copy Job Backups
-$backupsBc = @($jobBackups | ?{$_.JobType -eq "BackupSync"})
+$backupsBc = @($jobBackups | ?{($_.JobType -eq "BackupSync") -or ($_.JobType -eq "SimpleBackupCopyWorker")})
 # Get Agent Backup Job Backups
 $backupsEp = @($jobBackups | ?{$_.JobType -eq "EndpointBackup"})
 
@@ -810,7 +815,7 @@ $runningSessionsRp = @($sessListRp | ?{$_.State -eq "Working"})
 $failedSessionsRp = @($sessListRp | ?{($_.Result -eq "Failed") -and ($_.WillBeRetried -ne "True")})
 
 # Gather all Backup Copy Sessions within timeframe
-$sessListBc = @($allSess | ?{($_.EndTime -ge (Get-Date).AddHours(-$HourstoCheck) -or $_.CreationTime -ge (Get-Date).AddHours(-$HourstoCheck) -or $_.State -match "Working|Idle") -and $_.JobType -eq "BackupSync"})
+$sessListBc = @($allSess | ?{($_.EndTime -ge (Get-Date).AddHours(-$HourstoCheck) -or $_.CreationTime -ge (Get-Date).AddHours(-$HourstoCheck) -or $_.State -match "Working|Idle") -and (($_.JobType -eq "BackupSync") -or ($_.JobType -eq "SimpleBackupCopyWorker"))})
 If ($bcopyJob -ne $null -and $bcopyJob -ne "") {
   $allJobsBcTmp = @()
   $sessListBcTmp = @()
@@ -1060,9 +1065,10 @@ Function Get-VBRRepoInfo {
         "DataDomain" {"Data Domain"}
         "ExaGrid" {"ExaGrid"}
         "HPStoreOnce" {"HP StoreOnce"}
+        "WasabiS3" {"Wasabi"}
         default {"Unknown"}   
       }
-      $outputObj = Build-Object $r.Name $($r.GetHost()).Name.ToLower() $r.Path $r.GetContainer().CachedFreeSpace.InBytes $r.GetContainer().CachedTotalSpace.InBytes $r.Options.MaxTaskCount $rType
+      $outputObj = Build-Object $r.Name $($r.GetHost()).Name.ToLower() $r.Path $($r.GetContainer().CachedFreeSpace.InBytes) $($r.GetContainer().CachedTotalSpace.InBytes) $r.Options.MaxTaskCount $rType
     }
     $outputAry += $outputObj
   }
@@ -1104,6 +1110,7 @@ Function Get-VBRRepoInfo {
         "DataDomain" {"Data Domain"}
         "ExaGrid" {"ExaGrid"}
         "HPStoreOnce" {"HP StoreOnce"}
+        "WasabiS3" {"Wasabi"}
         default {"Unknown"}   
       }
       $outputObj = Build-Object $r.Name $($r.GetHost()).Name.ToLower() $r.Path $r.GetContainer().CachedFreeSpace.InBytes $r.GetContainer().CachedTotalSpace.InBytes $r.Options.MaxTaskCount $rType
@@ -1151,6 +1158,7 @@ Function Get-VBRSORepoInfo {
           "DataDomain" {"Data Domain"}
           "ExaGrid" {"ExaGrid"}
           "HPStoreOnce" {"HP StoreOnce"}
+          "WasabiS3" {"Wasabi"}
           default {"Unknown"}     
         }
         $outputObj = Build-Object $rs.Name $r.Name $($r.GetHost()).Name.ToLower() $r.Path $r.GetContainer().CachedFreeSpace.InBytes $r.GetContainer().CachedTotalSpace.InBytes $r.Options.MaxTaskCount $rType
@@ -4194,12 +4202,31 @@ $bodyRepo = $null
 If ($showRepo) {
   If ($repoList -ne $null) {
     $arrRepo = $repoList | Get-VBRRepoInfo | Select @{Name="Repository Name"; Expression = {$_.Target}},
-      @{Name="Type"; Expression = {$_.rType}}, @{Name="Max Tasks"; Expression = {$_.MaxTasks}},
-      @{Name="Host"; Expression = {$_.RepoHost}}, @{Name="Path"; Expression = {$_.Storepath}},
-      @{Name="Free (GB)"; Expression = {$_.StorageFree}}, @{Name="Total (GB)"; Expression = {$_.StorageTotal}},
-      @{Name="Free (%)"; Expression = {$_.FreePercentage}},
+      @{Name="Type"; Expression = {$_.rType}},
+      @{Name="Max Tasks"; Expression = {
+        If ($_.rType -eq "Wasabi") {"N/A"} # Wasabi S3 repositories report N/A in VBR
+        Else { $_.MaxTasks}}
+      },
+      @{Name="Host"; Expression = {$_.RepoHost}},
+      @{Name="Path"; Expression = {
+        If ($_.rType -eq "Wasabi") {"N/A"} # Wasabi S3 repositories report N/A in VBR
+        Else { $_.Storepath }}
+      },
+      @{Name="Free (GB)"; Expression = {
+        If ($_.rType -eq "Wasabi") {"N/A"} # Wasabi S3 repositories report N/A in VBR
+        Else { $_.StorageFree }}
+      },
+      @{Name="Total (GB)"; Expression = {
+        If ($_.rType -eq "Wasabi") {"N/A"} # Wasabi S3 repositories report N/A in VBR
+        Else { $_.StorageTotal }}
+      },
+      @{Name="Free (%)"; Expression = {
+        If ($_.rType -eq "Wasabi") {"N/A"} # Wasabi S3 repositories report N/A in VBR
+        Else { $_.FreePercentage }}
+      },
       @{Name="Status"; Expression = {
-        If ($_.FreePercentage -lt $repoCritical) {"Critical"}
+        If ($_.rType -eq "Wasabi") {"OK"} # raynorpat: this is kinda a kludge...
+        ElseIf ($_.FreePercentage -lt $repoCritical) {"Critical"}
         ElseIf ($_.StorageTotal -eq 0)  {"Warning"} 
         ElseIf ($_.FreePercentage -lt $repoWarn) {"Warning"}
         ElseIf ($_.FreePercentage -eq "Unknown") {"Unknown"}
@@ -4226,7 +4253,8 @@ If ($showRepo) {
     $arrSORepo = $repoListSo | Get-VBRSORepoInfo | Select @{Name="Scale Out Repository Name"; Expression = {$_.SOTarget}},
       @{Name="Member Repository Name"; Expression = {$_.Target}}, @{Name="Type"; Expression = {$_.rType}},
       @{Name="Max Tasks"; Expression = {$_.MaxTasks}}, @{Name="Host"; Expression = {$_.RepoHost}},
-      @{Name="Path"; Expression = {$_.Storepath}}, @{Name="Free (GB)"; Expression = {$_.StorageFree}},
+      @{Name="Path"; Expression = {$_.Storepath}},
+      @{Name="Free (GB)"; Expression = {$_.StorageFree}},
       @{Name="Total (GB)"; Expression = {$_.StorageTotal}}, @{Name="Free (%)"; Expression = {$_.FreePercentage}},
       @{Name="Status"; Expression = {
         If ($_.FreePercentage -lt $repoCritical) {"Critical"}
